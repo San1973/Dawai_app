@@ -1,0 +1,136 @@
+# Project: DawAI - Aapka Neeji Sahayak (Your Personal Assistant)
+
+## 1. Project Goal
+Build a mobile-first, single-page React application designed specifically for **elderly users in India**. The app acts as a medical assistant that reads doctor prescriptions/notes via camera, simplifies the medical jargon, translates it into the user's local Indian language, and helps manage medication adherence.
+
+## 2. Tech Stack & Architecture
+*   **Framework:** React 18+ (Function components, Hooks).
+*   **Language:** TypeScript (Strict typing).
+*   **Styling:** Tailwind CSS (via CDN is fine for simplicity, or standard install).
+*   **AI Backend:** Google GenAI SDK (`@google/genai`).
+    *   **Model:** `gemini-3-flash-preview` (Critical for Indian language nuances).
+*   **Storage:** Browser `localStorage` (No external database).
+*   **Icons:** Use standard Emojis (e.g., 💊, 👨‍⚕️) or a very minimal set of SVG icons. Do not use heavy icon libraries.
+*   **Build:** Vite (standard ESM setup).
+
+## 3. Design System & Accessibility (Crucial)
+*   **Theme:** **"Saffron & Warmth"**.
+    *   **Primary Color:** Saffron/Orange (`orange-600`, `orange-500`) representing health and purity in Indian culture.
+    *   **Accents:** Amber for summaries, Red for destructive actions.
+    *   **Background:** Clean Slate (`slate-50`) or White. **No background watermarks.**
+*   **Typography:** Large, readable fonts. High contrast text (`slate-900` on white).
+*   **UI Patterns:**
+    *   **Big Buttons:** Massive, touch-friendly card-buttons (minimum 60px height).
+    *   **No Hidden Menus:** Avoid hamburger menus. All navigation should be visible or linear.
+    *   **Linear Flow:** Scan -> Result -> Save -> History.
+
+## 4. Core Features & User Flow
+
+### A. Onboarding / Language Selection
+*   **Logic:** On first load, check `localStorage`. If no language is saved, show this screen.
+*   **UI:** A clean grid of large buttons.
+*   **Languages:** Support 20 major Indian languages + English:
+    *   Hindi, Bengali, Telugu, Tamil, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, Assamese, Urdu, Sanskrit, Nepali, Kashmiri, Sindhi, Konkani, Maithili, Dogri.
+*   **Display:** Show the **Native Name** (e.g., "हिंदी") in large bold text, and the English name (e.g., "Hindi") smaller below it.
+*   **Behavior:** Clicking a language saves it to storage and redirects to Home.
+
+### B. Home Screen
+*   **Header:** Sticky Saffron header with "DawAI" title.
+*   **Hero Action:** A massive "Camera" button in the center.
+    *   **Implementation:** Use `<input type="file" accept="image/*" capture="environment" />` to trigger the mobile camera directly.
+*   **Secondary Actions:** Large buttons for "Past Records" (History) and "Change Language" (Settings).
+
+### C. AI Analysis (The Brain)
+*   **Input:** Base64 image from the camera.
+*   **Prompting Strategy:**
+    *   Use `gemini-3-flash-preview`.
+    *   **System Instruction:** "You are a helpful medical assistant for elderly people. Simplify jargon. Translate everything to [Target Language]."
+    *   **Structured Output (JSON Schema):**
+        *   `doctorName`, `patientName`, `doctorPhone` (extract contact info).
+        *   `visitDate` (Try to standardise YYYY-MM-DD).
+        *   `summary`: A simple, 2-3 sentence layman explanation of the diagnosis.
+        *   `medications`: Array of objects containing:
+            *   `name` (English medical name).
+            *   `nameNative` (Transliterated name in local script).
+            *   `dosage` (Translated instructions, e.g., "1 tablet").
+            *   `timing` (Translated, e.g., "After breakfast").
+            *   `purpose` (Translated, simplified reason, e.g., "For fever").
+        *   `instructions`: General lifestyle/diet advice (Translated).
+*   **Loading State:** Show a spinner with text like "Reading prescription..." translated into the current language.
+
+### D. Result View (Digital Prescription)
+*   **Summary Card:** A highlighted Amber card at the top with the doctor's summary.
+*   **Doctor Info:** Card with Name and a **Clickable Phone Link** (`tel:...`).
+*   **Medication Cards:** List of medicines.
+    *   Show English Name + Native Name.
+    *   Tags for Dosage/Timing.
+    *   **Reminders Feature:** A generic "+ Set Reminder" button on each card.
+        *   Opens a native time picker (`<input type="time" />`).
+        *   Saves the specific time (HH:MM) to that medication object.
+*   **Instructions:** List general advice with optional reminders.
+*   **Voice Notes:**
+    *   A component to Record, Stop, and Play audio.
+    *   Use the **MediaRecorder API**.
+    *   Save the audio blob as a **Base64 string** attached to the history item.
+*   **Actions:** "Save Record" (Persist to local storage) and "Discard".
+
+### E. History & Search
+*   **Storage:** Retrieve items from `localStorage`.
+*   **Search Bar:** Filter by Doctor Name or Patient Name.
+*   **Auto-Translation:**
+    *   If the user changes their language setting, the app must detect that a history item is in a different language.
+    *   Use Gemini to **re-translate** the JSON content of the history item to the new target language on the fly.
+*   **List Item:** Show Doctor Name, Date (formatted locally), and a snippet of the summary.
+*   **Delete:** Allow deleting records with a confirmation prompt.
+
+### F. Reminders & Notifications
+*   **Service:** A background interval running every 15 seconds.
+*   **Logic:** Compare current device time (HH:MM) with saved reminders in `localStorage` history.
+*   **Trigger:**
+    *   Try to use the browser `Notification` API.
+    *   Fallback to `window.alert` if permissions are denied (common on mobile browsers without PWA install).
+
+## 5. Data Structures (TypeScript Interfaces)
+
+```typescript
+type SupportedLanguage = 'en' | 'hi' | 'bn' ...; // etc
+
+interface Medication {
+  name: string;
+  nameNative: string;
+  dosage: string;
+  timing: string;
+  purpose: string;
+  reminders?: string[]; // ["08:00", "20:00"]
+}
+
+interface Instruction {
+  description: string;
+  reminders?: string[];
+}
+
+interface HistoryItem {
+  id: string;
+  date: number; // Timestamp
+  doctorName: string;
+  patientName: string;
+  doctorPhone: string;
+  visitDate?: string;
+  summary: string; // In target language
+  medications: Medication[];
+  instructions: Instruction[];
+  voiceNoteBase64?: string;
+  analysisLanguage: SupportedLanguage; // To track translation needs
+}
+```
+
+## 6. Constraints & Edge Cases
+*   **Offline:** The UI should work offline, but scanning requires internet (API call). Handle API errors gracefully with a user-friendly message.
+*   **Permissions:** Request Camera and Microphone permissions explicitly via `metadata.json` or browser prompts.
+*   **Data Privacy:** All data stays in LocalStorage. No external database.
+
+## 7. Deliverables
+1.  Full `App.tsx` logic.
+2.  Service layers (`geminiService`, `storageService`, `notificationService`).
+3.  Components (`LanguageSelector`, `MedicineDisplay`, `VoiceRecorder`, `BigButton`).
+4.  Constants file with the full translation dictionary for UI labels (Welcome, Save, Delete, etc.) in all 20 languages.

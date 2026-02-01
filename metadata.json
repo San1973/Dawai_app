@@ -1,0 +1,8 @@
+{
+  "name": "Copy of DawAI - Gemini Powered Apka Neeji Svastha Sahayak",
+  "description": "\"India has 1.4 billion people — over 65% live in rural areas, yet 70-75% of hospitals and advanced care sit in cities. Thanks to Ayushman Bharat, millions get coverage, but rural patients still travel far for treatment, facing huge costs and delays. Literacy lags too — overall ~81%, rural closer to 77% — making handwritten prescriptions a nightmare: mixed English jargon, regional scripts, bad handwriting.\n\nThis isn't just OCR — it's a reasoning challenge.\n\nEnter Dawai, powered by Google Gemini: Snap a photo, Gemini deciphers the chaos, reasons through medicines and instructions, then delivers simple explanations + voice guidance in your language.\n\nDawai empowers rural Bharat to understand and follow treatment — no more confusion, better adherence, less travel.\nWatch the live demo: real prescription → clear Hindi, English or any Indic native language readout in seconds.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
