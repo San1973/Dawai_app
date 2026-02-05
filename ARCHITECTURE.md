@@ -10,17 +10,17 @@ DawAI is a **Client-Side Single Page Application (SPA)** capable of running as a
 ```mermaid
 graph TD
     User((Elderly User))
-    
-    subgraph Client_Device [User's Device / Browser]
-        subgraph React_App [DawAI Application]
+
+    subgraph Client_Device["User's Device / Browser"]
+        subgraph React_App["DawAI Application"]
             UI[UI Components]
             Router[View Manager]
-            
+
             subgraph Views
-               Home[Home View]
-               Scan[Scan Result]
-               History[History List]
-               Timetable[Daily Timetable]
+                Home[Home View]
+                Scan[Scan Result]
+                History[History List]
+                Timetable[Daily Timetable]
             end
 
             subgraph Services
@@ -30,57 +30,57 @@ graph TD
                 SW[Service Worker]
             end
         end
-        
+
         Camera[Camera Hardware]
         Mic[Microphone]
         Speaker[Speaker]
         LDB[(LocalStorage)]
     end
-    
-    Cloud[Google Cloud / Gemini API]
-    ext[Google Images]
-    
-    %% Interactions
+
+    Cloud["Google Cloud / Gemini API"]
+    ext["Google Images"]
+
+    %% ──────────────── Interactions ────────────────
     User -->|Interacts| UI
     UI -->|View State| Router
-    
-    %% Input Flow
+
+    %% ──────────────── Input Flow ────────────────
     UI -->|Request Image| Camera
     UI -->|Request Audio| Mic
-    
-    %% AI Flow (Analysis)
-    UI -->|Prescription Images| GS
-    GS -->|Image + Prompt (Gemini 3 Pro)| Cloud
-    Cloud -->|JSON Analysis w/ Transliteration| GS
-    
-    %% AI Flow (Audio Intelligence)
-    UI -->|Voice Note (WebM)| GS
-    GS -->|Audio + Prompt (Gemini 3 Pro)| Cloud
-    Cloud -->|Transcription + Extracted Instructions| GS
-    
-    %% AI Flow (Generative Features)
-    UI -->|Request TTS| GS
-    GS -->|Text Input (Gemini 2.5 TTS)| Cloud
-    Cloud -->|Audio Blob| GS
-    GS -->|Audio Playback| Speaker
-    
-    UI -->|Request Visual| GS
-    GS -->|Localized Prompt (Gemini 2.5 Flash Image)| Cloud
-    Cloud -->|Image Blob| GS
-    
-    %% External Visual Search
-    UI -->|Medicine Name| ext
 
-    %% Data Flow
-    GS -->|Parsed Data| UI
-    UI -->|Save Record| SS
-    SS <-->|Read/Write JSON| LDB
-    
-    %% Notification Flow
-    SW -->|Background Context| NS
-    SS -->|Check Schedules| NS
-    NS -->|Trigger Alarm (Audio Context)| UI
-    NS -->|System Notify| Client_Device
+    %% ──────────────── AI Flow (Prescription Analysis) ────────────────
+    UI -->|"Prescription Images"| GS
+    GS  -->|"Image + Prompt<br>(Gemini 1.5/2.0 Pro)"| Cloud
+    Cloud -->|"JSON Analysis<br>+ Transliteration"| GS
+
+    %% ──────────────── AI Flow (Voice Input) ────────────────
+    UI -->|"Voice Note (WebM)"| GS
+    GS  -->|"Audio + Prompt<br>(Gemini 1.5/2.0 Pro)"| Cloud
+    Cloud -->|"Transcription +<br>Extracted Instructions"| GS
+
+    %% ──────────────── Generative Features ────────────────
+    UI -->|"Request TTS"| GS
+    GS  -->|"Text → Gemini TTS"| Cloud
+    Cloud -->|"Audio Blob"| GS
+    GS -->|Play| Speaker
+
+    UI -->|"Request Medicine Visual"| GS
+    GS  -->|"Localized Prompt<br>(Gemini Flash Image Gen)"| Cloud
+    Cloud -->|"Generated Image"| GS
+
+    %% ──────────────── External Search ────────────────
+    UI -->|"Medicine Name"| ext
+
+    %% ──────────────── Data Persistence ────────────────
+    GS -->|"Parsed Data"| UI
+    UI -->|"Save Record"| SS
+    SS <-->|"Read/Write JSON"| LDB
+
+    %% ──────────────── Notifications ────────────────
+    SW -->|"Background Sync"| NS
+    SS -->|"Check Schedules"| NS
+    NS -->|"Trigger Alarm<br>(Audio Context)"| UI
+    NS -->|"System Notification"| Client_Device
 ```
 
 ## 3. Core Services
